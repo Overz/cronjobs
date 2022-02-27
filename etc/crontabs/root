@@ -1,0 +1,10 @@
+# crontab configuration
+# do daily/weekly/monthly maintenance
+# min   hour    day     month   weekday command
+*/1     *       *       *       *       run-parts /etc/periodic/1min    >> $LOGS/1min.log
+*/5     *       *       *       *       run-parts /etc/periodic/5min    >> $LOGS/5min.log
+*/15    *       *       *       *       run-parts /etc/periodic/15min   >> $LOGS/15min.log
+0       *       *       *       *       run-parts /etc/periodic/hourly  >> $LOGS/hourly.log
+0       1       *       *       *       run-parts /etc/periodic/daily   >> $LOGS/daily.log
+0       3       *       *       6       run-parts /etc/periodic/weekly  >> $LOGS/weekly.log
+0       5       1       *       *       run-parts /etc/periodic/monthly >> $LOGS/monthly.log

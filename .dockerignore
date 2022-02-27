@@ -1,0 +1,8 @@
+docker*
+docs
+*.conf
+*.md
+.editorconfig
+.dockerignore
+.prettierrc
+.gitignore

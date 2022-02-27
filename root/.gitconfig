@@ -1,0 +1,7 @@
+# [http]
+#         sslVerify = false
+[credential]
+				helper = store --file /root/.git-credentials
+[user]
+        name = Crond
+        email = crond@email.com

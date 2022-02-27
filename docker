@@ -1,0 +1,229 @@
+#!/bin/bash
+
+ACTUAL_DIR="$(cd "$(dirname "${0}")" && pwd)"
+ROOT_DIR="$(cd "${ACTUAL_DIR}"/.. && pwd)"
+
+ENV=""
+CONFIGURATION="environments.conf"
+
+# verify if has the environment requried used with build/run images
+__require_environment() {
+	if [ "$ENV" != "p" ] && [ "$ENV" != "l" ]; then
+		echo "It is necessary to inform the argument as 'P/p' (production), 'L/l' (Local) to define the environment!"
+		exit 1
+	fi
+}
+
+# read the environment file and save in memory
+__require_config_environment() {
+	if ! source "./$CONFIGURATION" > /dev/null 2>&1; then
+		echo "Erro lendo o arquivo de configuração de build"
+		exit 1
+	fi
+}
+
+# upgrade some local environments or whatever
+__modify() {
+	if [ "$ENV" = "l" ]; then
+		CONFIGURATION="environments.local.conf"
+	fi
+}
+
+# build official image
+build_image() {
+	__require_environment
+	__modify
+	__require_config_environment
+
+	echo "Building image: '$IMAGE'"
+
+	docker build -t $IMAGE . \
+			--build-arg PROXY_HTTP=$PROXY_HTTP \
+			--build-arg PROXY_HTTPS=$PROXY_HTTPS \
+			--build-arg HOSTS_FILE=$HOSTS_FILE \
+			--build-arg DEFAULT_USER=$DEFAULT_USER \
+			--build-arg DEFAULT_GROUP=$DEFAULT_GROUP \
+			--build-arg DEFAULT_HOME=$DEFAULT_HOME \
+			--build-arg SHRC=$SHRC \
+			--build-arg TZ=$TZ \
+			--build-arg GIT_AUTH_TOKEN=$GIT_AUTH_TOKEN \
+			--build-arg GIT_SSL_NO_VERIFY=$GIT_SSL_NO_VERIFY \
+			--build-arg REPOSITORY_URL=$REPOSITORY_URL \
+			--build-arg GIT_AUTH=$GIT_AUTH \
+			--build-arg GIT_CONFIG=$GIT_CONFIG \
+			--build-arg REPOSITORY=$REPOSITORY \
+			--build-arg NAME=$NAME \
+			--build-arg VERSION=$VERSION \
+			--build-arg WORKDIR=$WORKDIR \
+			--build-arg IMAGE=$IMAGE \
+			--build-arg LOGS=$LOGS \
+			--build-arg JOBS_DIR=$JOBS_DIR \
+			--build-arg CROND_LOGS=$CROND_LOGS \
+			--build-arg CRONTAB_CONFIG=$CRONTAB_CONFIG \
+			--build-arg PID_DIR=$PID_DIR \
+			--build-arg JAVA_8=$JAVA_8 \
+			--build-arg JAVA_HOME=$JAVA_HOME \
+			--build-arg JAVA_CA_CERTS=$JAVA_CA_CERTS \
+			--no-cache
+
+		echo "Image '$IMAGE' builded!"
+}
+
+# run the builded image
+run_image() {
+	__require_environment
+	__modify
+	__require_config_environment
+	__container_name="$NAME-$ENV"
+
+	docker run --rm -dit --hostname $NAME --name $__container_name --network host $IMAGE
+	docker ps
+
+	echo "Watching real time container..."
+	docker logs --follow $__container_name
+}
+
+# stop container with $env based
+stop_container() {
+	__require_environment
+	__modify
+	__require_config_environment
+	__container_name="$NAME-$ENV"
+
+	echo "Stopping '$ENV' container..."
+
+	docker container stop $__container_name > /dev/null 2>&1;
+
+	echo "Done!"
+}
+
+# remove all content
+delete_all() {
+	__require_environment
+	__modify
+	__require_config_environment
+	__container_name="$NAME-$ENV"
+
+	echo "Deleting '$ENV' content..."
+
+	docker container rm --force $__container_name > /dev/null 2>&1;
+	docker rmi $IMAGE --force > /dev/null 2>&1;
+
+	echo "Done!"
+}
+
+run_all() {
+	echo "Processing all tasks..."
+
+	stop_container
+	build_image
+	run_image
+}
+
+# print help message
+show_help() {
+  printf "DOCKER Script - Building or Running docker images\n\n"
+  printf "USAGE:\n    docker [environment] [command]\n\n"
+  printf "AVAILABLE ENVIRONMENTS:\n"
+	printf "    P       -  Production\n"
+	printf "    L       -  Locally\n\n"
+  printf "AVAILABLE COMMANDS:\n"
+  printf "    build   -  Build the docker image.\n"
+  printf "    run     -  Runs the image that was built earlier.\n"
+  printf "    envs    -  Show all environments used to build and run the docker image.\n"
+  printf "    delete  -  Delete from local cache the image.\n"
+  printf "    stop    -  Stop the running images.\n"
+  printf "    all     -  Stop, Build and Run an image.\n"
+}
+
+# print environment(.local).conf
+show_envs() {
+	__modify
+	__require_config_environment
+
+	echo "IMAGE               : $IMAGE"
+	echo "GIT_AUTH_TOKEN      : $GIT_AUTH_TOKEN"
+	echo "GIT_SSL_NO_VERIFY   : $GIT_SSL_NO_VERIFY"
+	echo "REPOSITORY_URL      : $REPOSITORY_URL"
+	echo "GIT_AUTH            : $GIT_AUTH"
+	echo "GIT_CONFIG          : $GIT_CONFIG"
+	echo "REPOSITORY          : $REPOSITORY"
+	echo "PROXY_HTTP          : $PROXY_HTTP"
+	echo "PROXY_HTTPS         : $PROXY_HTTPS"
+	echo "HOSTS_FILE          : $HOSTS_FILE"
+	echo "DEFAULT_USER        : $DEFAULT_USER"
+	echo "DEFAULT_GROUP       : $DEFAULT_GROUP"
+	echo "DEFAULT_HOME        : $DEFAULT_HOME"
+	echo "SHRC                : $SHRC"
+	echo "TZ                  : $TZ"
+	echo "NAME                : $NAME"
+	echo "VERSION             : $VERSION"
+	echo "WORKDIR             : $WORKDIR"
+	echo "IMAGE               : $IMAGE"
+	echo "LOGS                : $LOGS"
+	echo "JOBS_DIR            : $JOBS_DIR"
+	echo "CROND_LOGS          : $CROND_LOGS"
+	echo "CRONTAB_CONFIG      : $CRONTAB_CONFIG"
+	echo "PID_DIR             : $PID_DIR"
+	echo "JAVA_8              : $JAVA_8"
+	echo "JAVA_HOME           : $JAVA_HOME"
+	echo "JAVA_CA_CERTS       : $JAVA_CA_CERTS"
+}
+
+main() {
+	# to lower case
+	ENV="${2,,}"
+
+	if [ $# -le 0 ]; then
+		show_help
+		exit 0
+	fi
+
+	while [ $# -gt 0 ]; do
+		case $1 in
+			build)
+			build_image
+			shift
+			exit 0
+			;;
+
+			run)
+			run_image
+			shift
+			exit 0
+			;;
+
+			env|envs)
+			show_envs
+			shift
+			exit 0
+			;;
+
+			stop)
+			stop_container
+			shift
+			exit 0
+			;;
+
+			delete|remove)
+			delete_all
+			shift
+			exit 0
+			;;
+
+			all)
+			run_all
+			shift
+			exit 0
+			;;
+
+			*)
+			show_help
+			shift
+			exit 0
+			;;
+		esac
+	done
+}
+
+main "$@"

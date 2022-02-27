@@ -1,0 +1,100 @@
+#!/bin/sh
+
+stop_crond() {
+	kill $(pidof crond)
+	echo "Service stopped!"
+}
+
+start_crond() {
+	__CRONTAB="$CRONTAB_CONFIG/$DEFAULT_USER"
+
+	PID="$(pidof crond)"
+	if [ "$PID" != "" ]; then
+		echo "Crond already running, please stop first!"
+		exit 1
+	fi
+
+	echo "Starting crond: $__CRONTAB"
+
+	echo "Setting crontab '$__CRONTAB'"
+	crontab $__CRONTAB
+
+	# # start do cron
+	echo "Starting cron logging at '$CROND_LOGS'"
+	crond -b -L $CROND_LOGS
+
+	PID=$(pidof crond)
+	echo "$PID" > $PID_DIR/crond.pid
+
+	echo "Service started!"
+}
+
+restart_crond() {
+	stop_crond
+	sleep 2
+	start_crond
+}
+
+show_help() {
+  printf "CRON Script - Stop/Running the cron\n\n"
+  printf "USAGE:\n    cron [command]\n\n"
+  printf "AVAILABLE COMMANDS:\n"
+  printf "    start     -  Start the cron based on environments inside the container\n"
+  printf "    stop      -  Stop/Kill the cron.\n"
+  printf "    restart   -  Stop and Start forced.\n"
+  printf "    help      -  Show this help usage.\n"
+}
+
+kill_pids() {
+	# TODO: read files from $PID_DIR and stop everything
+	echo "Undefined"
+}
+
+main() {
+	if [ $# -le 0 ]; then
+		show_help
+		exit 0
+	fi
+
+	while [ $# -gt 0 ]; do
+		case $1 in
+			stop)
+			stop_crond
+			shift
+			exit 0
+			;;
+
+			start)
+			start_crond
+			shift
+			exit 0
+			;;
+
+			restart)
+			restart_crond
+			shift
+			exit 0
+			;;
+
+			pids)
+			kill_pids
+			shift
+			exit 0
+			;;
+
+			help)
+			show_help
+			shift
+			exit 0
+			;;
+
+			*)
+			show_help
+			shift
+			exit 0
+			;;
+		esac
+	done
+}
+
+main "$@"

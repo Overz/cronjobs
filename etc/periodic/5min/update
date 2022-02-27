@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# cronjob para realizar a atualiza....o dos repositorios locais
+# do projeto de esteira mainframe, logs, arquivos com links
+# comitando, gerando diffs, etc...
+
+# script  and root directory
+SCRIPT_DIR="$(cd $(dirname ${0}) && pwd)"
+ROOT_DIR="$(cd ${SCRIPT_DIR}/.. && pwd)"
+
+# load shared script
+. "$ROOT_DIR/lib.sh" || exit 1
+
+# check if this script is enable
+is_disable
+
+log "Running '$DIR_NAME'..."
+
+$WORKDIR/cron stop > /dev/null 2>&1;
+
+sleep 5;
+
+cd $WORKDIR && (
+        git diff --quiet --output $LOGS/$NAME.diff
+        git add .
+        git commit -m "Updating local changes"
+        git pull --rebase
+        git commit -m "merge changes"
+        git push origin master
+) > /var/log/git.log
+
+log "Update finished!"
+
+$WORKDIR/cron start > /dev/null 2>&1;

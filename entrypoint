@@ -1,0 +1,116 @@
+#!/bin/sh
+
+SCRIPT_DIR="$(cd $(dirname ${0}) && pwd)"
+ROOT_DIR="$(cd ${SCRIPT_DIR}/.. && pwd)"
+SCRIPT_NAME=`basename $0`
+DIR_NAME=$(basename $SCRIPT_DIR)
+
+log(){
+	TAG=${2:-"INFO"}
+	echo "$TAG: ts=\"$(date +'%d/%m/%Y - %H:%M:%S')\" pid=\"$$\" root=\"$DIR_NAME\" id=\"$SCRIPT_NAME\" msg=\"$1\""
+}
+
+start() {
+	log "Starting configuration!"
+
+	log "Adding temporary hosts"
+	cat $HOSTS_FILE > /etc/hosts
+
+	log "Adding git-credentials at $DEFAULT_HOME"
+	echo $GIT_AUTH > ~/.git-credentials
+
+	ls -lha $DEFAULT_HOME
+}
+
+configure_repo() {
+	__JOBS="$WORKDIR$JOBS_DIR"
+	__CRONTAB="$WORKDIR$CRONTAB_CONFIG"
+
+	log "Clonning repository to '$WORKDIR'"
+	git clone $REPOSITORY $WORKDIR
+
+	log "Modifying cronjob files"
+	chmod -R a+x $__JOBS
+
+	log "Removing '$CRONTAB_CONFIG'"
+	crontab -r
+	rm -rvf $CRONTAB_CONFIG
+
+	log "Linking '$__CRONTAB' > '$CRONTAB_CONFIG'"
+	ln -sf $__CRONTAB $CRONTAB_CONFIG
+
+	log "Removing '$JOBS_DIR'"
+	rm -rvf $JOBS_DIR
+
+	log "Linking '$__JOBS' > '$JOBS_DIR'"
+	ln -sf $__JOBS $JOBS_DIR
+}
+
+system() {
+	__HOSTS="$WORKDIR$HOSTS_FILE"
+	__ORIGINAL_HOSTS="/etc/hosts"
+	__GIT_CONFIG="$WORKDIR$GIT_CONFIG"
+	__LOCALTIME="/etc/localtime"
+	__ZONEINFO="/usr/share/zoneinfo/$TZ"
+
+	log "Removing '$__ORIGINAL_HOSTS'"
+	rm -rvf $__ORIGINAL_HOSTS
+
+	log "Linking '$__HOSTS' > '$__ORIGINAL_HOSTS'"
+	ln -sf $__HOSTS $__ORIGINAL_HOSTS
+
+	log "Removing $GIT_CONFIG"
+	rm -rvf $GIT_CONFIG
+
+	log "Linking '$__GIT_CONFIG' > '$GIT_CONFIG'"
+	ln -sf $__GIT_CONFIG $GIT_CONFIG
+
+	log "Setting the timezone '$TZ'"
+	echo $TZ > /etc/timezone
+
+	log "Removing $__LOCALTIME"
+	rm -rvf $__LOCALTIME
+
+	log "Linking '$__ZONEINFO' > '$__LOCALTIME'"
+	ln -sf $__ZONEINFO $__LOCALTIME
+}
+
+configure_crond() {
+	__CRONTAB="$WORKDIR$CRONTAB_CONFIG/$DEFAULT_USER"
+
+	log "Setting crontab '$__CRONTAB'"
+	crontab $__CRONTAB
+	crontab -l
+
+	# # start do cron
+	log "Starting cron logging at '$CROND_LOGS'"
+	crond -b -L $CROND_LOGS
+}
+
+if ! source $SHRC; then
+	log "Error using source in '$SHRC'" "ERROR"
+	sleep infinity
+fi
+
+start
+
+configure_repo
+
+system
+
+log "Creating dir '$PID_DIR'"
+mkdir $PID_DIR
+
+configure_crond
+
+log "Saving crond pid"
+echo "$(pidof crond)" > $PID_DIR/crond.pid
+
+log "Getting proccess"
+ps -aux
+
+log "Configuration done!"
+
+sleep infinity &
+MAIN_PID=$!
+wait "$MAIN_PID"

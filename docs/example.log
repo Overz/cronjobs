@@ -1,0 +1,56 @@
+ts="26/02/2022 - 16:26:50" pid="7" id="entrypoint" msg="Starting configuration!"
+ts="26/02/2022 - 16:26:50" pid="7" id="entrypoint" msg="Adding temporary hosts"
+ts="26/02/2022 - 16:26:50" pid="7" id="entrypoint" msg="Adding git-credentials at /root"
+ts="26/02/2022 - 16:26:50" pid="7" id="entrypoint" msg="Clonning repository to '/cronjobs'"
+Cloning into '/cronjobs'...
+remote: Enumerating objects: 46, done.
+remote: Counting objects: 100% (46/46), done.
+remote: Compressing objects: 100% (26/26), done.
+remote: Total 46 (delta 8), reused 43 (delta 8), pack-reused 0
+Receiving objects: 100% (46/46), 114.69 KiB | 1.79 MiB/s, done.
+Resolving deltas: 100% (8/8), done.
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Modifying cronjob files"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Removing '/etc/crontabs'"
+removed '/etc/crontabs/cron.update'
+removed directory: '/etc/crontabs'
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Linking '/cronjobs/etc/crontabs' > '/etc/crontabs'"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Removing '/etc/periodic'"
+removed directory: '/etc/periodic/daily'
+removed directory: '/etc/periodic/15min'
+removed directory: '/etc/periodic/weekly'
+removed directory: '/etc/periodic/monthly'
+removed directory: '/etc/periodic/hourly'
+removed directory: '/etc/periodic'
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Linking '/cronjobs/etc/periodic' > '/etc/periodic'"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Removing '/etc/hosts'"
+rm: can't remove '/etc/hosts': Resource busy
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Linkando '/cronjobs/etc/hosts.local' > '/etc/hosts'"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Removing /root/.gitconfig"
+removed '/root/.gitconfig'
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Linkando '/cronjobs/root/.gitconfig' > '/root/.gitconfig'"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Setting the timezone 'America/Sao_Paulo'"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Removing /etc/localtime"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Linking '/usr/share/zoneinfo/America/Sao_Paulo' > '/etc/localtime'"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Creating dir '/pids'"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Setting crontab '/cronjobs/etc/crontabs/root'"
+# crontab configuration
+# do daily/weekly/monthly maintenance
+# min   hour    day     month   weekday command
+*/1     *       *       *       *       run-parts /etc/periodic/1min
+*/5     *       *       *       *       run-parts /etc/periodic/5min
+*/15    *       *       *       *       run-parts /etc/periodic/15min
+0       *       *       *       *       run-parts /etc/periodic/hourly
+0       1       *       *       *       run-parts /etc/periodic/daily
+0       3       *       *       6       run-parts /etc/periodic/weekly
+0       5       1       *       *       run-parts /etc/periodic/monthly
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Starting cron logging at '/cronjobs/logs/crond.log'"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Saving crond pid"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Getting proccess"
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  2.0  0.0    804     4 pts/0    Ss   16:26   0:00 tini -- /entr
+root           7  0.0  0.0   1612  1044 pts/0    S+   16:26   0:00 /bin/sh /entr
+root          55  0.0  0.0   1584   684 ?        Ss   16:26   0:00 crond -b -L /
+root          59  0.0  0.0   1708   876 pts/0    R+   16:26   0:00 ps -aux
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="ESTEIRA_ENTRYPOINT_OK: "
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="ESTEIRA_ENTRYPOINT_OK: 1"
+ts="26/02/2022 - 16:26:52" pid="7" id="entrypoint" msg="Configuration done!"

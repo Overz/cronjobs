@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# script  and root directory
+SCRIPT_DIR="$(cd $(dirname ${0}) && pwd)"
+ROOT_DIR="$(cd ${SCRIPT_DIR}/.. && pwd)"
+
+# load shared script
+. "$ROOT_DIR/lib.sh" || exit 1
+
+is_disable
+
+log "Running '$DIR_NAME'..."
+
+rm -rf $LOGS/*.log
